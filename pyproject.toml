@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "muon-sim"
+version = "0.1.0"
+description = "Analyse pour détecteur de muons cosmiques à deux voies"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["sim"]
+
+[tool.pytest.ini_options]
+pythonpath = ["sim"]
+testpaths = ["tests"]

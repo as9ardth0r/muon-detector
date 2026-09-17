@@ -1,70 +1,70 @@
 # muon-detector
 
-### Détecteur de muons cosmiques à coïncidence — STM32F405, dérivé du CosmicWatch (MIT)
+### Coincidence cosmic muon detector — STM32F405, derived from CosmicWatch (MIT)
 
-Deux voies scintillateur+SiPM en coïncidence pour distinguer les vrais rayons
-cosmiques du bruit électronique, avec correction barométrique du taux
-mesuré. Relie directement le projet MadGraph (physique des particules) au
-travail embarqué des autres dépôts.
+Two scintillator+SiPM channels in coincidence to distinguish real
+cosmic rays from electronic noise, with barometric correction of the
+measured rate. Directly links the MadGraph particle-physics project to
+the embedded work in the other repositories.
 
-## Ce qui est réel et vérifié (19 tests)
+## What's real and verified (19 tests)
 
-| Brique | Vérifié comment |
+| Component | Verified how |
 |---|---|
-| **Génération de trains d'impulsions** (Poisson) | Modèle standard pour un flux de rayons cosmiques |
-| **Détection de coïncidence** | **Le test le plus important** : deux flux de bruit indépendants à haut débit ne produisent qu'un taux de coïncidence fortuite faible, alors que des événements réellement corrélés (avec gigue de mesure réaliste) sont presque tous retrouvés — la coïncidence rejette vraiment le bruit, pas juste "tourne sans erreur" |
-| **Correction barométrique** | **Deux vraies erreurs de signe physique attrapées par les tests** et corrigées : la correction allait dans le mauvais sens (une mesure à pression plus élevée doit être corrigée à la hausse, pas à la baisse — plus de pression = plus d'absorption atmosphérique = taux mesuré plus faible). Validé par régénération de données synthétiques à coefficient connu et vérification que l'ajustement le retrouve exactement |
-| **Portage C de la coïncidence** | Comparé numériquement au Python via `ctypes`, à un taux réaliste de détecteur. Limite de quantification à très haute densité d'événements documentée explicitement plutôt que cachée (voir `tests/test_coincidence_c_matches_python.py`) |
-| **Firmware STM32F405** | Compile et **linke réellement** (24,5 Ko) — réutilise les pilotes I2C/horloge déjà validés du projet nanodrone (même famille de MCU) |
+| **Pulse train generation** (Poisson) | Standard model for a cosmic-ray flux |
+| **Coincidence detection** | **The most important test**: two independent high-rate noise streams produce only a low rate of accidental coincidence, while genuinely correlated events (with realistic measurement jitter) are almost all recovered — coincidence genuinely rejects noise, not just "runs without error" |
+| **Barometric correction** | **Two real physics sign errors caught by the tests** and fixed: the correction was going in the wrong direction (a measurement at higher pressure must be corrected upward, not downward — more pressure = more atmospheric absorption = lower measured rate). Validated by regenerating synthetic data with a known coefficient and checking that the fit recovers it exactly |
+| **C port of coincidence detection** | Numerically compared to Python via `ctypes`, at a realistic detector rate. Quantization limit at very high event density explicitly documented rather than hidden (see `tests/test_coincidence_c_matches_python.py`) |
+| **STM32F405 firmware** | Actually compiles and **links** (24.5 KB) — reuses the already-validated I2C/clock drivers from the nanodrone project (same MCU family) |
 
-## Ce qui n'est PAS vérifié
+## What is NOT verified
 
-- **Le circuit analogique** (amplificateur, comparateur, convertisseur DC-DC
-  pour la polarisation du SiPM) : composants réels cités dans
-  `docs/hardware.md`, mais aucun schéma ni valeurs de composants fournis —
-  la documentation CosmicWatch originale (schéma complet publié) est le bon
-  point de départ plutôt que de re-router ce circuit à l'aveugle ici.
-- **Le coefficient barométrique réel** de ce détecteur : le module
-  d'ajustement (`barometric.py`) est prêt et testé sur données synthétiques,
-  mais la vraie valeur de β doit être mesurée sur le détecteur assemblé.
-- **Aucune mesure sur un vrai détecteur** — pas de matériel disponible dans
-  cet environnement de développement.
+- **The analog circuit** (amplifier, comparator, DC-DC converter for
+  SiPM bias): real components cited in `docs/hardware.md`, but no
+  schematic or component values provided — the original CosmicWatch
+  documentation (full published schematic) is the right starting
+  point rather than blindly re-routing this circuit here.
+- **This detector's actual barometric coefficient**: the fitting
+  module (`barometric.py`) is ready and tested on synthetic data, but
+  the real value of β must be measured on the assembled detector.
+- **No measurement on a real detector** — no hardware available in
+  this development environment.
 
-## Nomenclature
+## Bill of materials
 
-**[docs/hardware.md](docs/hardware.md)** — composants réels vérifiés contre
-la documentation publique CosmicWatch (SiPM onsemi C-Series, scintillateur
-polystyrène+PPO+POPOP 5×5×1cm, convertisseur DC-DC MAX5026), plan de
-brochage, et pourquoi deux voies plutôt qu'une.
+**[docs/hardware.md](docs/hardware.md)** — real components checked
+against public CosmicWatch documentation (onsemi C-Series SiPM,
+polystyrene+PPO+POPOP 5×5×1cm scintillator, MAX5026 DC-DC converter),
+pinout, and why two channels rather than one.
 
-## Structure du dépôt
+## Repository structure
 
 ```
 sim/muon_sim/
-├── pulse_train.py       # génération de trains d'impulsions (Poisson)
-├── coincidence.py         # détection de coïncidence + statistiques
-└── barometric.py            # correction barométrique (ajustement + application)
+├── pulse_train.py       # pulse train generation (Poisson)
+├── coincidence.py         # coincidence detection + statistics
+└── barometric.py            # barometric correction (fit + application)
 firmware/
 ├── Core/Inc, Core/Src        # pulse_timer (TIM2 capture), coincidence.c, bme280.c
-├── Drivers/                    # en-têtes CMSIS vendorisés (STM32F405)
-├── startup/                     # linker script + démarrage
-└── Makefile                      # compilation arm-none-eabi-gcc
-tests/                             # 19 tests, dont validation croisée C/Python
-docs/hardware.md                     # nomenclature + brochage
-.github/workflows/build.yml            # CI : tests + compilation firmware
+├── Drivers/                    # vendored CMSIS headers (STM32F405)
+├── startup/                     # linker script + startup
+└── Makefile                      # arm-none-eabi-gcc build
+tests/                             # 19 tests, including C/Python cross-validation
+docs/hardware.md                     # bill of materials + pinout
+.github/workflows/build.yml            # CI: tests + firmware compilation
 ```
 
-## Installation et usage
+## Installation and usage
 
 ```bash
 pip install -r sim/requirements.txt
 pytest tests/ -v                    # 19 tests
 
 cd firmware
-make                                 # produit build/muon_detector.elf
+make                                 # produces build/muon_detector.elf
 ```
 
-## Licence
+## License
 
-MIT pour le code original — voir `LICENSE`. Fichiers CMSIS vendorisés sous
-Apache 2.0 — voir `THIRD_PARTY_LICENSES.md`.
+MIT for original code — see `LICENSE`. Vendored CMSIS files under
+Apache 2.0 — see `THIRD_PARTY_LICENSES.md`.
